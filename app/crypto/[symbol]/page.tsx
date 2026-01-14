@@ -7,11 +7,11 @@ interface PageProps {
 export default async function CryptoSymbolPage({ params }: PageProps) {
     const { symbol } = await params; // e.g. 'BTC'
 
-    const res = await fetch(`http://127.0.0.1:8000/api/crypto/${symbol}/`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/crypto/${symbol}/`, {
         cache: "no-store", //fresh data each time
     });
 
-    // 🔥 THIS is the key
+    // 🔥 THIS is the key - works only in server components
     if (!res.ok) {
         notFound(); // immediately renders 404 page
     }
