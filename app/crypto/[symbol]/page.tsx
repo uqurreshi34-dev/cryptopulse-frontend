@@ -6,12 +6,13 @@ interface PageProps {
   params: Promise<{ symbol: string }>;
 }
 
+// need to match API fields in https://free-crypto-news.vercel.app/api/news?ticker=BTC&limit=3 etc
 interface NewsItem {
   title: string;
-  date: string;
+  pubDate: string;
   source: string;
   description: string;
-  url: string;
+  link: string;
 }
 
 export default async function CryptoSymbolPage({ params }: PageProps) {
@@ -136,13 +137,13 @@ if (cgRes.ok) {
                   {item.title}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {new Date(item.date).toLocaleDateString()} • {item.source}
+                  {new Date(item.pubDate).toLocaleDateString()} • {item.source}
                 </p>
                 <p className="mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
                   {item.description}
                 </p>
                 <a
-                  href={item.url}
+                  href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 inline-block text-blue-600 hover:underline dark:text-blue-400"
