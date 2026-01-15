@@ -8,12 +8,13 @@ interface PageProps {
 
 // need to match API fields in https://free-crypto-news.vercel.app/api/news?ticker=BTC&limit=3 etc
 interface NewsItem {
-  title: string;
-  pubDate: string;
-  source: string;
-  description: string;
-  link: string;
-}
+    title: string;
+    pubDate: string;   // ← Changed from date
+    source: string;
+    description: string;
+    link: string;      // ← Changed from url
+    // Optional extras from API: sourceKey, category, timeAgo
+  }
 
 export default async function CryptoSymbolPage({ params }: PageProps) {
   const { symbol } = await params;
@@ -55,14 +56,14 @@ if (cgRes.ok) {
   console.error(`CoinGecko history fetch failed for ${coinId}:`, cgRes.status);
 }
 
-  // Optional: Fetch news (using free crypto news API example - see notes below)
+  // // Fetch news from free GitHub/Vercel API
   const newsRes = await fetch(
-    `https://free-crypto-news.vercel.app/api/news?ticker=${data.symbol.toUpperCase()}&limit=5` // Example - replace with real free one
+    `https://free-crypto-news.vercel.app/api/news?ticker=${data.symbol.toUpperCase()}&limit=5`
   );
   let newsItems: NewsItem[] = [];
   if (newsRes.ok) {
     const newsJson = await newsRes.json();
-    newsItems = (newsJson.data || []) as NewsItem[];
+    newsItems = (newsJson.articles || []) as NewsItem[];
   }
 
   return (
