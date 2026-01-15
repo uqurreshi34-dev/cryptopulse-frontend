@@ -1,4 +1,4 @@
-"use client"; // This component runs on the client (browser) because it uses hooks like useState/useEffect
+"use client"; // This component runs on the client (browser) because it uses hooks like useState/useEffect/useMemo
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation"; // Next.js App Router hooks
@@ -16,15 +16,39 @@ interface CryptoPrice {
 
 // Main component
 export default function CryptoDashboard({
-    initialData,
+    initialData, lastUpdated
 }: {
     initialData: CryptoPrice[];
+    lastUpdated?: string | null;
 }) {
+
+
+// Update banner logic
+// We compare two authoritative timestamps
+
+// If they’re within 60 seconds → backend just refreshed
+// // using setTimeout otherwise get Next.js 15 synchronous error setShowBanner
+ // Therefore using setTimeout 
+// When lastUpdated changes → useEffect runs immediately after the render that was caused by the state/prop change that updated lastUpdated.
+// → You're calling setState during the same render cycle (flush phase) → React warns:
+// "Cannot update a component (X) while rendering a different component (Y).
+// To locate the bad setState() call..."
+const [showBanner, setShowBanner] = useState(false);
+useEffect(() => {
+    if (!lastUpdated) return;
+  
+    const age = Date.now() - new Date(lastUpdated).getTime();
+    const shouldShow = age < 60_000;
+    const timer = setTimeout(() => {
+      setShowBanner(shouldShow);
+    }, 0);
+  
+    return () => clearTimeout(timer);
+  }, [lastUpdated]);
+
+
     const searchParams = useSearchParams(); // Read query parameters from URL
     const router = useRouter(); // Router object to push/replace URL
-
-    // Keep a local state copy of the data (we could also just use initialData)
-    const [data] = useState<CryptoPrice[]>(initialData);
 
     // Normalize numeric fields to ensure proper sorting/filtering
     const normalizedData = useMemo(
@@ -54,8 +78,13 @@ export default function CryptoDashboard({
     const minMarketCapUSD = minMarketCapB * 1_000_000_000;
 
     // Sort key state
-    const [sortKey, setSortKey] = useState<"price" | "market_cap" | "name">(
-        (searchParams.get("sort") as any) || "price"
+    type SortKey = "price" | "market_cap" | "name";
+    const isValidSortKey = (value: string | null): value is SortKey => {
+        return value === "price" || value === "market_cap" || value === "name";
+    };
+    const sortParam = searchParams.get("sort");
+    const [sortKey, setSortKey] = useState<SortKey>(
+        isValidSortKey(sortParam) ? sortParam : "price"
     );
 
     // Keep the URL in sync with current state
@@ -109,6 +138,12 @@ export default function CryptoDashboard({
     return (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Crypto Prices</h1>
+
+            {showBanner && (
+        <div className="mb-4 rounded border border-green-300 bg-green-100 px-4 py-2 text-green-800">
+        🔄 Prices were just refreshed
+        </div>
+    )}
 
             {/* Controls */}
             <div className="flex flex-wrap gap-3 mb-6">
