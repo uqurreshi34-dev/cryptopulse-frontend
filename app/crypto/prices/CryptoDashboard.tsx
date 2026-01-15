@@ -149,7 +149,7 @@ useEffect(() => {
             <div className="flex flex-wrap gap-3 mb-6">
                 {/* Search input */}
                 <input
-                    placeholder="Search by symbol or name (e.g. BTC, Ethereum)"
+                    placeholder="Search by symbol or name"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="px-3 py-1 border rounded"
