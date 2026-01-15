@@ -210,30 +210,52 @@ useEffect(() => {
             </div>
 
             {/* Table */}
-            <table className="min-w-full border">
-                <thead className="bg-gray-100 dark:bg-gray-800">
-                    <tr>
-                        <th className="px-4 py-2 text-left">Symbol</th>
-                        <th className="px-4 py-2 text-left">Name</th>
-                        <th className="px-4 py-2 text-left">Price (USD)</th>
-                        <th className="px-4 py-2 text-left">Market Cap</th>
-                        <th className="px-4 py-2 text-left">Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedData.map((c) => (
-                        <tr key={c.id}>
-                            <td className="px-4 py-2 text-left">
-                                <Link href={`/crypto/${c.symbol}`}>{c.symbol}</Link>
-                            </td>
-                            <td className="px-4 py-2 text-left">{c.name}</td>
-                            <td className="px-4 py-2 text-left">${c.price_usd.toLocaleString()}</td>
-                            <td className="px-4 py-2 text-left">${c.market_cap.toLocaleString()}</td>
-                            <td className="px-4 py-2 text-left">{new Date(c.timestamp).toLocaleString()}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            tsx<div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead className="bg-gray-50 dark:bg-gray-800">
+      <tr>
+        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Symbol
+        </th>
+        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Name
+        </th>
+        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Price (USD)
+        </th>
+        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+          Market Cap
+        </th>
+        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 hidden md:table-cell">
+          Updated
+        </th>
+      </tr>
+    </thead>
+    <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+      {sortedData.map((c) => (
+        <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+            <Link href={`/crypto/${c.symbol}`} className="text-blue-600 hover:underline">
+              {c.symbol}
+            </Link>
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+            {c.name}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            ${c.price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+            ${c.market_cap.toLocaleString()}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+            {new Date(c.timestamp).toLocaleString()}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
         </div>
     );
 }
