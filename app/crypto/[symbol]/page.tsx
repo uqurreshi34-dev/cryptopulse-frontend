@@ -1,74 +1,84 @@
 // app/crypto/[symbol]/page.tsx
+// SERVER COMPONENT: Fetches data on the server for better performance/SEO
 import { notFound } from "next/navigation";
 import PriceChartWrapper from './PriceChartWrapper';
 
+// Props type for the dynamic [symbol] route
 interface PageProps {
   params: Promise<{ symbol: string }>;
 }
 
-// need to match API fields in https://free-crypto-news.vercel.app/api/news?ticker=BTC&limit=3 etc
+// Interface matching NewsData.io response structure
 interface NewsItem {
-    title: string;
-    pubDate: string;   // ← Changed from date
-    source: string;
-    description: string;
-    link: string;      // ← Changed from url
-    // Optional extras from API: sourceKey, category, timeAgo
-  }
+  title: string;
+  link: string;          // Full external URL
+  description: string;   // Article summary
+  pubDate: string;       // ISO date string
+  source_id: string;     // e.g. "coindesk"
+  source_name?: string;  // Human-readable source (fallback to source_id if missing)
+}
 
 export default async function CryptoSymbolPage({ params }: PageProps) {
+  // 1. Get symbol from URL
   const { symbol } = await params;
 
-  // Fetch current coin data (your existing endpoint)
+  // 2. Fetch current coin details from your backend
   const currentRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/crypto/${symbol}/`, {
-    cache: "no-store",
+    cache: "no-store", // Always fresh data
   });
 
   if (!currentRes.ok) notFound();
 
   const data = await currentRes.json();
-// Fetch historical data from CoinGecko using the reliable ID from backend
-const coinId = data.coingecko_id || data.symbol.toLowerCase();
 
-if (!coinId) {
-  console.warn(`No CoinGecko ID available for ${data.symbol}`);
-  // Optional: you can early-return or show error UI here
-}
+  // 3. Fetch 30-day price history from CoinGecko
+  const coinId = data.coingecko_id || data.symbol.toLowerCase();
 
-const cgRes = await fetch(
-  `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=30&interval=daily&precision=full`,
-  {
-    headers: {
-      "x-cg-demo-api-key": process.env.COINGECKO_API_KEY || "",
-    },
-    cache: "no-store",
+  if (!coinId) {
+    console.warn(`No CoinGecko ID available for ${data.symbol}`);
   }
-);
 
-let historyData: { timestamp: number; price: number }[] = [];
-if (cgRes.ok) {
-  const cgData = await cgRes.json();
-  historyData = cgData.prices.map(([ts, price]: [number, number]) => ({
-    timestamp: ts,
-    price,
-  }));
-} else {
-  console.error(`CoinGecko history fetch failed for ${coinId}:`, cgRes.status);
-}
-
-  // // Fetch news from free GitHub/Vercel API
-  const newsRes = await fetch(
-    `https://free-crypto-news.vercel.app/api/news?ticker=${data.symbol.toUpperCase()}&limit=5`
+  const cgRes = await fetch(
+    `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=30&interval=daily&precision=full`,
+    {
+      headers: {
+        "x-cg-demo-api-key": process.env.COINGECKO_API_KEY || "",
+      },
+      cache: "no-store",
+    }
   );
+
+  let historyData: { timestamp: number; price: number }[] = [];
+  if (cgRes.ok) {
+    const cgData = await cgRes.json();
+    historyData = cgData.prices.map(([ts, price]: [number, number]) => ({
+      timestamp: ts,
+      price,
+    }));
+  } else {
+    console.error(`CoinGecko history fetch failed for ${coinId}:`, cgRes.status);
+  }
+
+  // 4. Fetch recent news from NewsData.io (free tier)
+  const newsRes = await fetch(
+    `https://newsdata.io/api/1/crypto?apikey=${process.env.NEWSDATA_IO_KEY}&q=${encodeURIComponent(
+      data.symbol.toUpperCase()
+    )}&size=5&language=en`,
+    { cache: "no-store" }
+  );
+
   let newsItems: NewsItem[] = [];
   if (newsRes.ok) {
     const newsJson = await newsRes.json();
-    newsItems = (newsJson.articles || []) as NewsItem[];
+    newsItems = (newsJson.results || []) as NewsItem[];
+  } else {
+    console.error("NewsData.io failed:", newsRes.status, await newsRes.text());
   }
 
+  // 5. Render the full page
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 md:p-8 border border-gray-200 dark:border-gray-700">
-      {/* Header - same as before */}
+      {/* Header: Coin name, symbol, current price */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
@@ -90,7 +100,7 @@ if (cgRes.ok) {
         </div>
       </div>
 
-      {/* Price History Chart */}
+      {/* Price History Chart Section */}
       <div className="mb-10">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           30-Day Price History (USD)
@@ -102,7 +112,7 @@ if (cgRes.ok) {
         )}
       </div>
 
-      {/* Stats Grid - unchanged */}
+      {/* Stats Grid: Market Cap + Last Updated */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
         <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-600 transition hover:shadow-md">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Market Cap</p>
@@ -125,63 +135,53 @@ if (cgRes.ok) {
       {/* Recent News Section */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          {/* Recent News for {data.name} */}Recent Crypto News (General)
+          Recent News for {data.name} ({data.symbol.toUpperCase()})
         </h2>
+
+        {/* Show articles if available */}
         {newsItems.length > 0 ? (
-  <div className="space-y-6">
-    {newsItems.map((item: NewsItem, idx: number) => {
-      // Clean the link: remove CDATA wrappers and fix broken protocols
-      let cleanLink = item.link || '';
-      cleanLink = cleanLink
-        .replace(/<!\[CDATA\[/g, '')     // remove opening CDATA
-        .replace(/\]\]>/g, '')           // remove closing CDATA
-        .trim();
+          <div className="space-y-6">
+            {newsItems.map((item: NewsItem) => (
+              <div
+              key={item.link} //(no stable ID from API)
+                className="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg border border-gray-200 dark:border-gray-600"
+              >
+                {/* Article title */}
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  {item.title}
+                </h3>
 
-      // Fix rare "https:/" → "https://"
-      if (cleanLink.startsWith('https:/') && !cleanLink.startsWith('https://')) {
-        cleanLink = 'https://' + cleanLink.slice(7);
-      }
+                {/* Date and source */}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {new Date(item.pubDate).toLocaleString('en-GB', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}{' • '}
+                  {item.source_name || item.source_id || 'Unknown Source'}
+                </p>
 
-      const isValidUrl = /^https?:\/\//i.test(cleanLink);
+                {/* Short description preview */}
+                <p className="mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
+                  {item.description || 'No description available.'}
+                </p>
 
-      return (
-        <div
-          key={idx}
-          className="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg border border-gray-200 dark:border-gray-600"
-        >
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            {item.title}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {new Date(item.pubDate).toLocaleDateString()} • {item.source}
+                {/* External link - opens in new tab */}
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  Read more →
+                </a>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600 dark:text-gray-300">
+            No recent news available right now (try again later or check your NewsData.io API key).
           </p>
-          <p className="mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
-            {item.description}
-          </p>
-          {isValidUrl ? (
-            <a
-              href={cleanLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Read more →
-            </a>
-          ) : (
-            <p className="mt-2 text-red-600 dark:text-red-400 text-sm">
-              Invalid or unavailable link
-            </p>
-          )}
-        </div>
-      );
-    })}
-  </div>
-) : (
-  <p className="text-gray-600 dark:text-gray-300">
-    {/* No recent news available for {data.symbol.toUpperCase()} right now. */}
-    No recent news available right now.
-  </p>
-)}
+        )}
       </div>
     </div>
   );
