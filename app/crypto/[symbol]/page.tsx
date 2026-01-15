@@ -125,7 +125,7 @@ if (cgRes.ok) {
       {/* Recent News Section */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Recent News for {data.name}
+          {/* Recent News for {data.name} */}Recent Crypto News (General)
         </h2>
         {newsItems.length > 0 ? (
   <div className="space-y-6">
@@ -178,7 +178,8 @@ if (cgRes.ok) {
   </div>
 ) : (
   <p className="text-gray-600 dark:text-gray-300">
-    No recent news available for {data.symbol.toUpperCase()} right now.
+    {/* No recent news available for {data.symbol.toUpperCase()} right now. */}
+    No recent news available right now.
   </p>
 )}
       </div>
