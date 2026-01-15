@@ -128,37 +128,59 @@ if (cgRes.ok) {
           Recent News for {data.name}
         </h2>
         {newsItems.length > 0 ? (
-          <div className="space-y-6">
-            {newsItems.map((item: NewsItem, idx: number) => (
-              <div
-                key={idx}
-                className="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg border border-gray-200 dark:border-gray-600"
-              >
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {new Date(item.pubDate).toLocaleDateString()} • {item.source}
-                </p>
-                <p className="mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
-                  {item.description}
-                </p>
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Read more →
-                </a>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-600 dark:text-gray-300">
-            No recent news available or loading...
+  <div className="space-y-6">
+    {newsItems.map((item: NewsItem, idx: number) => {
+      // Clean the link: remove CDATA wrappers and fix broken protocols
+      let cleanLink = item.link || '';
+      cleanLink = cleanLink
+        .replace(/<!\[CDATA\[/g, '')     // remove opening CDATA
+        .replace(/\]\]>/g, '')           // remove closing CDATA
+        .trim();
+
+      // Fix rare "https:/" → "https://"
+      if (cleanLink.startsWith('https:/') && !cleanLink.startsWith('https://')) {
+        cleanLink = 'https://' + cleanLink.slice(7);
+      }
+
+      const isValidUrl = /^https?:\/\//i.test(cleanLink);
+
+      return (
+        <div
+          key={idx}
+          className="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg border border-gray-200 dark:border-gray-600"
+        >
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            {item.title}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {new Date(item.pubDate).toLocaleDateString()} • {item.source}
           </p>
-        )}
+          <p className="mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
+            {item.description}
+          </p>
+          {isValidUrl ? (
+            <a
+              href={cleanLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Read more →
+            </a>
+          ) : (
+            <p className="mt-2 text-red-600 dark:text-red-400 text-sm">
+              Invalid or unavailable link
+            </p>
+          )}
+        </div>
+      );
+    })}
+  </div>
+) : (
+  <p className="text-gray-600 dark:text-gray-300">
+    No recent news available for {data.symbol.toUpperCase()} right now.
+  </p>
+)}
       </div>
     </div>
   );
