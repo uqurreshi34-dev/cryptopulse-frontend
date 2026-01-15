@@ -208,7 +208,10 @@ useEffect(() => {
                     Sort by Name
                 </button>
             </div>
-
+            {/* hidden md:table-cell means:
+hidden by default (on small screens / mobile)
+table-cell (visible) only starting from the md breakpoint (~768px and up — typical tablet/desktop) - SEE 
+'UDPATED' <th> and <td> and notice on small devices sm, we hide 'MARKET_CAP' <th> and <td>  */}
             {/* Table */}
             tsx<div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
