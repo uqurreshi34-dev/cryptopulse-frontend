@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation"; // Next.js App Router hooks
 import Link from "next/link"; // For client-side navigation
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 // Define the TypeScript interface for a crypto row
 interface CryptoPrice {
@@ -156,6 +157,7 @@ useEffect(() => {
         router.replace("/crypto/prices", { scroll: false });
     };
 
+    const hasFilters = search !== "" || minPrice !== "" || minMarketCapB > 0 || sortKey !== "price";
 
     // Render the component
     return (
@@ -233,9 +235,18 @@ useEffect(() => {
 
                 {/* NEW: Reset Filters button */}
                 <button
-                    onClick={resetFilters}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded shadow-sm transition-colors"
+                    onClick={() => {
+                        if (window.confirm("Reset all filters?")) {
+                          resetFilters();
+                        }
+                      }} disabled={!hasFilters}
+                      className={`flex items-center gap-1 px-4 py-2 font-medium rounded shadow-sm transition-colors ${
+                        hasFilters
+                          ? "bg-red-500 hover:bg-red-600 text-white"
+                          : "bg-gray-400 cursor-not-allowed text-gray-700 opacity-70"
+                      }`}
                 >
+                    <ArrowPathIcon className="h-5 w-5" />
                     Reset Filters
                 </button>
             </div>
