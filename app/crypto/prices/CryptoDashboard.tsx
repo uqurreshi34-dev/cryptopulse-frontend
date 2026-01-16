@@ -239,7 +239,7 @@ useEffect(() => {
                         if (window.confirm("Reset all filters?")) {
                           resetFilters();
                         }
-                      }} disabled={!hasFilters}
+                      }} disabled={!hasFilters} title={hasFilters ? "Reset all filters to default" : "No filters active"}
                       className={`flex items-center gap-1 px-4 py-2 font-medium rounded shadow-sm transition-colors ${
                         hasFilters
                           ? "bg-red-500 hover:bg-red-600 text-white"
