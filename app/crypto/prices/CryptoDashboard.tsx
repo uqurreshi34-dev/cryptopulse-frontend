@@ -86,47 +86,6 @@ useEffect(() => {
     const [sortKey, setSortKey] = useState<SortKey>(
         isValidSortKey(sortParam) ? sortParam : "price"
     );
-
-    // Keep the URL in sync with current state
-    // useEffect(() => {
-    //     const params = new URLSearchParams(); 
-    //     if (search) params.set("search", search); 
-    //     if (minPrice !== "") params.set("minPrice", String(minPrice)); 
-    //     if (minMarketCapB > 0) params.set("minMarketCapB", String(minMarketCapB)); 
-    //     params.set("sort", sortKey); // Always include sort key
-
-    //     
-    //     router.replace(`/crypto/prices?${params.toString()}`, { scroll: false });
-    // }, [search, minPrice, minMarketCapB, sortKey, router]); 
-
-    const syncUrl = useCallback(() => {
-        const params = new URLSearchParams(); // Create a URLSearchParams object
-      
-        if (search) params.set("search", search); // Add search text if present
-        if (minPrice !== "") params.set("minPrice", String(minPrice)); // Add min price
-        if (minMarketCapB > 0) params.set("minMarketCapB", String(minMarketCapB)); // Add slider value
-        params.set("sort", sortKey);
-      
-        const queryString = params.toString();
-        const newUrl = `/crypto/prices${queryString ? `?${queryString}` : ''}`;
-      // Navigate to the provided href. Replaces the current history entry.
-     // scroll false prevents page jump on update
-        router.replace(newUrl, { scroll: false });
-      }, [search, minPrice, minMarketCapB, sortKey, router]); // // re-run effect if any state deps or router change
-      
-      // Debounce the sync to prevent rapid-fire calls (e.g. slider dragging)
-      useEffect(() => {
-        const timer = setTimeout(() => {
-          syncUrl();
-        }, 300); // 300ms debounce - feels instant but avoids spam
-      
-        return () => clearTimeout(timer);
-      }, [syncUrl]); // Only re-run when syncUrl changes (i.e., when deps change)
-
-
-
-
-
     // Filter the data based on search, minPrice, and slider
     const filteredData = useMemo(
         () =>
@@ -161,6 +120,42 @@ useEffect(() => {
             }),
         [filteredData, sortKey] // recompute when filteredData or sortKey changes
     );
+
+    const syncUrl = useCallback(() => {
+        const params = new URLSearchParams(); // Create a URLSearchParams object
+      
+        if (search) params.set("search", search); // Add search text if present
+        if (minPrice !== "") params.set("minPrice", String(minPrice)); // Add min price
+        if (minMarketCapB > 0) params.set("minMarketCapB", String(minMarketCapB)); // Add slider value
+        params.set("sort", sortKey);
+      
+        const queryString = params.toString();
+        const newUrl = `/crypto/prices${queryString ? `?${queryString}` : ''}`;
+      // Navigate to the provided href. Replaces the current history entry.
+     // scroll false prevents page jump on update
+        router.replace(newUrl, { scroll: false });
+      }, [search, minPrice, minMarketCapB, sortKey, router]); // // re-run effect if any state deps or router change
+      
+      // Debounce the sync to prevent rapid-fire calls (e.g. slider dragging)
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          syncUrl();
+        }, 300); // 300ms debounce - feels instant but avoids spam
+      
+        return () => clearTimeout(timer);
+      }, [syncUrl]); // Only re-run when syncUrl changes (i.e., when deps change)
+
+      // Reset function - clears all filters and URL params
+    const resetFilters = () => {
+        setSearch("");
+        setMinPrice("");
+        setMinMarketCapB(0);
+        setSortKey("price"); // Reset to default sort (or whatever your default is)
+    
+        // Clear URL params completely
+        router.replace("/crypto/prices", { scroll: false });
+    };
+
 
     // Render the component
     return (
@@ -234,6 +229,14 @@ useEffect(() => {
                         }`}
                 >
                     Sort by Name
+                </button>
+
+                {/* NEW: Reset Filters button */}
+                <button
+                    onClick={resetFilters}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded shadow-sm transition-colors"
+                >
+                    Reset Filters
                 </button>
             </div>
             {/* hidden md:table-cell means:
