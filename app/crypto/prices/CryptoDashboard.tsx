@@ -1,6 +1,6 @@
 "use client"; // This component runs on the client (browser) because it uses hooks like useState/useEffect/useMemo
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation"; // Next.js App Router hooks
 import Link from "next/link"; // For client-side navigation
 
@@ -88,16 +88,44 @@ useEffect(() => {
     );
 
     // Keep the URL in sync with current state
-    useEffect(() => {
+    // useEffect(() => {
+    //     const params = new URLSearchParams(); 
+    //     if (search) params.set("search", search); 
+    //     if (minPrice !== "") params.set("minPrice", String(minPrice)); 
+    //     if (minMarketCapB > 0) params.set("minMarketCapB", String(minMarketCapB)); 
+    //     params.set("sort", sortKey); // Always include sort key
+
+    //     
+    //     router.replace(`/crypto/prices?${params.toString()}`, { scroll: false });
+    // }, [search, minPrice, minMarketCapB, sortKey, router]); 
+
+    const syncUrl = useCallback(() => {
         const params = new URLSearchParams(); // Create a URLSearchParams object
+      
         if (search) params.set("search", search); // Add search text if present
         if (minPrice !== "") params.set("minPrice", String(minPrice)); // Add min price
         if (minMarketCapB > 0) params.set("minMarketCapB", String(minMarketCapB)); // Add slider value
-        params.set("sort", sortKey); // Always include sort key
+        params.set("sort", sortKey);
+      
+        const queryString = params.toString();
+        const newUrl = `/crypto/prices${queryString ? `?${queryString}` : ''}`;
+      // Navigate to the provided href. Replaces the current history entry.
+     // scroll false prevents page jump on update
+        router.replace(newUrl, { scroll: false });
+      }, [search, minPrice, minMarketCapB, sortKey, router]); // // re-run effect if any state deps or router change
+      
+      // Debounce the sync to prevent rapid-fire calls (e.g. slider dragging)
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          syncUrl();
+        }, 300); // 300ms debounce - feels instant but avoids spam
+      
+        return () => clearTimeout(timer);
+      }, [syncUrl]); // Only re-run when syncUrl changes (i.e., when deps change)
 
-        // Navigate to the provided href. Replaces the current history entry.
-        router.replace(`/crypto/prices?${params.toString()}`, undefined);
-    }, [search, minPrice, minMarketCapB, sortKey, router]); // re-run effect if any state changes
+
+
+
 
     // Filter the data based on search, minPrice, and slider
     const filteredData = useMemo(

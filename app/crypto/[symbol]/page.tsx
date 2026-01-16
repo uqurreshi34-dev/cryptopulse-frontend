@@ -19,7 +19,7 @@ interface NewsItem {
 }
 
 export default async function CryptoSymbolPage({ params }: PageProps) {
-  // 1. Get symbol from URL
+  // 1. Get symbol from URL symbol here must match grammatically with [symbol]
   const { symbol } = await params;
 
   // 2. Fetch current coin details from your backend
